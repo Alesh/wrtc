@@ -1,4 +1,4 @@
-import asyncio
+import os.path
 from aiohttp import web
 
 routes = web.RouteTableDef()
@@ -7,31 +7,40 @@ routes = web.RouteTableDef()
 @routes.post('/rest/v1/otapp/user/enter')
 async def user_enter(request):
     data = await request.json()
-    request.app.user_enter(**data)
+    data = request.app.user_enter(**data)
+    return web.json_response(data)
 
 
 @routes.post('/rest/v1/otapp/user/exit')
 async def user_exit(request):
     data = await request.json()
     request.app.user_exit(**data)
+    return web.Response(status=200)
 
 
 @routes.post('/rest/v1/otapp/session/create')
 async def create_session(request):
     data = await request.json()
-    request.app.create_session(**data)
+    data = request.app.create_session(**data)
+    return web.json_response(data)
 
 
 @routes.post('/rest/v1/otapp/session/join')
 async def join_to_session(request):
     data = await request.json()
-    request.app.join_to_session(**data)
+    data = request.app.join_to_session(**data)
+    return web.json_response(data)
 
 
 @routes.post('/rest/v1/otapp/session/call')
 async def call_from_session(request):
     data = await request.json()
     request.app.call_from_session(**data)
+    return web.Response(status=200)
+
+
+
+routes.static('/', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'wwwroot'), show_index=True)
 
 
 if __name__ == '__main__':

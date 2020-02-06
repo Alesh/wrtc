@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OTAPP</title>
+    <script src="https://static.opentok.com/v2/js/opentok.min.js"></script>
+</head>
+<body>
+<table width="1000px">
+    <tr>
+        <td colspan="2">
+            <form id="form-user">
+                <label>Ваше имя &nbsp; <input name="user-id" type="text"></label>
+                <button id="form-user-submit" type="submit">Войти</button>
+            </form>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div id="publisher"></div>
+            <div id="subscribers"></div>
+        </td>
+        <td>
+            <div id="rigth-panel"></div>
+        </td>
+    </tr>
+</table>
+</body>
+<script src="index.js"></script>
+<script>
+    var timerRefresh = null;
+    document.getElementById('form-user').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        let state = await form_user_submit( this.elements.namedItem('user-id').value);
+        if (state !== null) {
+            document.getElementById('form-user-submit').innerText = 'Выйти';
+            timerRefresh = setInterval(async function () {
+                showRightPanel(state);
+                state = await refresh_user_state();
+            }, 1000);
+        } else {
+            if (timerRefresh !== null) {
+                clearTimeout(timerRefresh);
+                right_panel.innerHTML = '';
+                timerRefresh = null;
+            }
+            document.getElementById('form-user-submit').innerText = 'Войти';
+        }
+    });
+
+    function showRightPanel(state) {
+        let tmpl = '';
+        let right_panel = document.getElementById('rigth-panel');
+        if ('patients' in state ) {
+            for (var name in state['patients']) {
+                tmpl += '<div style="display: block"><label>';
+                tmpl += name + ' &nbsp; <button onclick="callup(\''+name+'\')">Вызывать</button>';
+                tmpl += '</label></div>';
+            }
+        } else {
+            tmpl += '<div style="display: block"><label>';
+            if (state['state'] != null) {
+                if (state['state'] == session_id) {
+                    tmpl += 'Вы подключены';
+                } else {
+                    let sid = state['state'];
+                    tmpl += 'Вас вызывают &nbsp; <button onclick="pickup(\''+sid+'\')">Ответить</button>'
+                }
+            } else {
+                tmpl += 'Ждите вызова';
+            }
+            tmpl += '</label></div>';
+        }
+        right_panel.innerHTML = tmpl;
+    }
+</script>
+</html>
