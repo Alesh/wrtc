@@ -40,8 +40,8 @@
             }, 1000);
         } else {
             if (timerRefresh !== null) {
+                document.getElementById('rigth-panel').innerHTML = '';
                 clearTimeout(timerRefresh);
-                right_panel.innerHTML = '';
                 timerRefresh = null;
             }
             document.getElementById('form-user-submit').innerText = 'Войти';

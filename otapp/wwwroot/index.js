@@ -1,6 +1,7 @@
 var api_key = null;
 var user_id = null;
 var session_id = null;
+var session = null;
 var token = null;
 
 async function refresh_user_state() {
@@ -32,6 +33,10 @@ async function form_user_submit(value) {
                 user_id: user_id
             })
         });
+        if (session !== null) {
+            session.disconnect();
+            session = null;
+        }
     }
     api_key = null;
     user_id = null;
@@ -54,6 +59,7 @@ async function callup(addressee) {
     api_key = data.api_key;
     session_id = data.session_id;
     token = data.token;
+    open_session();
     await fetch('/rest/v1/otapp/session/call', {
         method: 'POST',
         headers: {
@@ -82,4 +88,59 @@ async function pickup(session_id_) {
     api_key = data.api_key;
     session_id = data.session_id;
     token = data.token;
+    open_session();
 }
+
+////////
+var publisher;
+
+function open_session() {
+    if (session !== null) {
+       session.disconnect();
+    }
+
+
+    session = OT.initSession(api_key, session_id);
+    publisher = OT.initPublisher('publisher');
+
+    // Attach event handlers
+    session.on({
+
+        // This function runs when session.connect() asynchronously completes
+        sessionConnected: function (event) {
+            // Publish the publisher we initialzed earlier (this will trigger 'streamCreated' on other
+            // clients)
+            session.publish(publisher, function (error) {
+                if (error) {
+                    console.error('Failed to publish', error);
+                }
+            });
+        },
+
+        // This function runs when another client publishes a stream (eg. session.publish())
+        streamCreated: function (event) {
+            // Create a container for a new Subscriber, assign it an id using the streamId, put it inside
+            // the element with id="subscribers"
+            var subContainer = document.createElement('div');
+            subContainer.id = 'stream-' + event.stream.streamId;
+            document.getElementById('subscribers').appendChild(subContainer);
+
+            // Subscribe to the stream that caused this event, put it inside the container we just made
+            session.subscribe(event.stream, subContainer, function (error) {
+                if (error) {
+                    console.error('Failed to subscribe', error);
+                }
+            });
+        }
+
+    });
+
+    session.connect(token, function (error) {
+        if (error) {
+            console.error('Failed to connect', error);
+        }
+    });
+
+}
+
+
