@@ -31,7 +31,7 @@
     var timerRefresh = null;
     document.getElementById('form-user').addEventListener('submit', async function (event) {
         event.preventDefault();
-        let state = await form_user_submit( this.elements.namedItem('user-id').value);
+        let state = await form_user_submit(this.elements.namedItem('user-id').value);
         if (state !== null) {
             document.getElementById('form-user-submit').innerText = 'Выйти';
             timerRefresh = setInterval(async function () {
@@ -51,25 +51,28 @@
     function showRightPanel(state) {
         let tmpl = '';
         let right_panel = document.getElementById('rigth-panel');
-        if ('patients' in state ) {
-            for (var name in state['patients']) {
-                tmpl += '<div style="display: block"><label>';
-                tmpl += name + ' &nbsp; <button onclick="callup(\''+name+'\')">Вызывать</button>';
-                tmpl += '</label></div>';
-            }
-        } else {
-            tmpl += '<div style="display: block"><label>';
-            if (state['state'] != null) {
-                if (state['state'] == session_id) {
-                    tmpl += 'Вы подключены';
-                } else {
-                    let sid = state['state'];
-                    tmpl += 'Вас вызывают &nbsp; <button onclick="pickup(\''+sid+'\')">Ответить</button>'
+        if (session_id === null) {
+            if ('patients' in state) {
+                for (var name in state['patients']) {
+                    tmpl += '<div style="display: block"><label>';
+                    if (state['patients'][name][1]) tmpl += name + ' &nbsp; <button onclick="pickup(\'' + state['patients'][name][0] + '\')">Присоединится</button>';
+                    else tmpl += name + ' &nbsp; <button onclick="callup(\'' + name + '\')">Вызывать</button>';
+                    tmpl += '</label></div>';
                 }
             } else {
-                tmpl += 'Ждите вызова';
+                tmpl += '<div style="display: block"><label>';
+                if (state['state'][0] != null) {
+                    if (state['state'][1]) {
+                        tmpl += 'Вы подключены';
+                    } else {
+                        let sid = state['state'][0];
+                        tmpl += 'Вас вызывают &nbsp; <button onclick="pickup(\'' + sid + '\')">Ответить</button>'
+                    }
+                } else {
+                    tmpl += 'Ждите вызова';
+                }
+                tmpl += '</label></div>';
             }
-            tmpl += '</label></div>';
         }
         right_panel.innerHTML = tmpl;
     }

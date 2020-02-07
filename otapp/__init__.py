@@ -18,17 +18,18 @@ class Application(web.Application):
 
     def user_enter(self, user_id):
         if user_id not in self.users:
-            self.users[user_id] = None
+            self.users[user_id] = [None, False]
         rv = {'state': self.users[user_id]}
 
         if user_id.lower().startswith('dr.'):
-            rv['patients'] = dict((user_id, session_id)
-                                  for user_id, session_id in self.users.items()
+            rv['patients'] = dict((user_id, state)
+                                  for user_id, state in self.users.items()
                                   if not user_id.lower().startswith('dr.'))
         return rv
 
     def _exit_from_session(self, user_id):
-        session_id = self.users[user_id]
+        session_id = self.users[user_id][0]
+        self.users[user_id] = [None, False]
         if session_id is not None:
             if user_id in self.sessions[session_id]:
                 self.sessions[session_id][1].pop(user_id)
@@ -49,6 +50,7 @@ class Application(web.Application):
         token = self.opentok.generate_token(session_id)
         self.sessions[session_id] = [session, {}]
         self.sessions[session_id][1][user_id] = token
+        self.users[user_id] = [session_id, True]
         return {'api_key': self.opentok.api_key, 'session_id': session_id, 'token': token}
 
     def join_to_session(self, user_id, session_id):
@@ -57,11 +59,12 @@ class Application(web.Application):
         if session_id not in self.sessions:
             raise web.HTTPNotFound(reason='session_id not found')
         if not user_id.lower().startswith('dr.'):
-            if session_id != self.users[user_id]:
+            if session_id != self.users[user_id][0]:
                 raise web.HTTPForbidden(reason='patient cannot join to arbitrary session')
         self._exit_from_session(user_id)
         token = self.opentok.generate_token(session_id)
         self.sessions[session_id][1][user_id] = token
+        self.users[user_id] = [session_id, True]
         return {'api_key': self.opentok.api_key, 'session_id': session_id, 'token': token}
 
     def call_from_session(self, user_id, session_id, addressee):
@@ -71,4 +74,4 @@ class Application(web.Application):
             raise web.HTTPForbidden(reason='patient cannot call from session')
         if addressee not in self.users:
             raise web.HTTPNotFound(reason='addressee not found')
-        self.users[addressee] = session_id
+        self.users[addressee] = [session_id, False]

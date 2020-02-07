@@ -33,10 +33,10 @@ async function form_user_submit(value) {
                 user_id: user_id
             })
         });
-        if (session !== null) {
+        if ((session !== null)&&(session.currentState=='connected')) {
             session.disconnect();
-            session = null;
         }
+        session = null;
     }
     api_key = null;
     user_id = null;
